@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wurfl>
+  <version>
+    <ver>www.wurflpro.com - 2010-09-17 15:50:54</ver>
+    <last_updated>Fri Sep 17 15:56:32 -0500 2010</last_updated>
+    <official_url>http://wurfl.sourceforge.net/</official_url>
+         <maintainers>
+             <maintainer name="Luca Passani" email="luca.passani at gmail point com" home_page="http://www.wurfl.com"/>
+         </maintainers>
+         <authors>
+           <author name="Luca Passani" email="luca.passani at gmail point com" home_page="http://www.wurfl.com"/>
+         </authors>
+    <statement>
+     <![CDATA[
+
+      Dear Developer, the WURFL file contains information about the
+      capabilities of mobile devices, capabilities and features.
+      The main scope of this file is to collect as
+      many information as we can about all the existing wireless devices
+      that access mobile pages so that developers will be able to build better
+      applications and better services for the users.
+      This project is open-source and is intended for developers working
+      with the WAP environment. All the information listed here has been
+      collected by many different people from many different
+      countries. You are allowed to use WURFL in any of your applications,
+      free or commercial. The only thing required is to make public any
+      modification to this file, following the original
+      spirit and idea of the creators of this project. This will help WURFL
+      to grow better and better every day. The use of WURFL is at your own risk,
+      there is no warranty that all agents and
+      capabilities are correct. All the information, as stated, has been gathered
+      by many users from many places around the world and as such there is
+      no guarantee about the reliability of this
+      information. Post any noteworthy modification and comment
+      to the file on the WMLProgramming mailing list on Yahoo Groups:
+      http://tech.groups.yahoo.com/group/wmlprogramming/ Alternatively,
+      you can mail your modification to Luca Passani,
+      the WURFL maintainer, at passani at eunet dot no
+
+Thank you
+
+WMLProgramming mailing list
+]]></statement>
+ </version>
+ <devices>
+  <device id="chtml_generic" user_agent="DO_NOT_MATCH_GENERIC_HTML" fall_back="generic">
+    <group id="markup">
+      <capability name="html_wi_oma_xhtmlmp_1_0" value="true"/>
+      <capability name="html_wi_imode_compact_generic" value="true"/>
+      <capability name="wml_1_1" value="true"/>
+      <capability name="preferred_markup" value="html_wi_imode_compact_generic"/>
+      <capability name="xhtml_support_level" value="1"/>
+    </group>
+  </device>
+ </devices>
+</wurfl>
