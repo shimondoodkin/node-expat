@@ -18,19 +18,24 @@ this.sax=expat;
 // to use original expat you can do: 
 // var expatsax=require('./deps/node-expat').sax;
 // var parser= new expatsax.Parser(charset) and add the expat events i added below:
+
  
 
-function parser(ignore_ns,charset)
+function parser(add_ref,ignore_ns,charset)
 {
  var self = this;
  self.addns=!!ignore_ns;
  self.onfinish=function () { };
-  
+ self.trimvaluefirst=true;
+ self.trimvaluelast=true;
+ self.add_ref=!!add_ref;
+ 
+ 
  if(!charset)self.charset="UTF-8";
  function reset()
  {
   self.root=null;
-  self.root=self.addns?{parent:null,children:[],attrs:[],nschildren:[],nsattrs:[]}: {parent:null,children:[],attrs:[]};
+  self.root={};;
   self.ns={};
   self.element = null;
  }self.reset=reset;
@@ -65,8 +70,11 @@ function parser(ignore_ns,charset)
    }
    self.element=self.root
   }
-
-  var el={parent:self.element};
+  
+  var el={};
+  if(self.add_ref) el.parent=self.element;
+   
+   
   var smicpos,nk;
   for(var k in attrs)
   {
@@ -79,12 +87,14 @@ function parser(ignore_ns,charset)
   }
   
   nk=name;
-  smicpos=name.indexOf(':'); if(smicpos>0) nk=name.substring(smicpos+1,k.length);
-  el.tagname=self.addns?name:nk;
+  smicpos=name.indexOf(':'); if(smicpos>0) nk=name.substring(smicpos+1,name.length);
+  el._tagname=self.addns?name:nk;
+  el._nstagname=name;
+  
   if(typeof self.element[nk]==='undefined')
   {
   
-   el[0]=el; el['length']=1; // array emulation
+   if(self.add_ref) el[0]=el; el['length']=1; // array emulation
    
    self.element[self.addns?name:nk]=el;
   }
@@ -95,39 +105,110 @@ function parser(ignore_ns,charset)
   else
   {
    var tmp=self.element[nk];
-   delete tmp[0]; delete tmp['length']; // array emulation
+   if(self.add_ref) delete tmp[0]; delete tmp['length']; // array emulation
    self.element[self.addns?name:nk]=[tmp,el];
   }
   self.parents.push(self.element);
   self.element=el;
+  
+  self.trimvaluefirst=true;
  });
  
- self.parser.addListener('endElement', function(name, attrs)
+ self.parser.addListener('endElement', function(name)
  {
- console.log(self.element.tagname+"!="+name);
-  self.element=self.parents.pop();
-  
-  /*
-  if(self.parents.length>1)
+  if(self.element && ((typeof self.element._value)!=='undefined'))
   {
-   do
+   self.element._value=trim(self.element._value);
+   if(self.element._value=="")
+    delete self.element._value;
+  }
+  //console.log(name); // strange not all tags get closed , but just before oppening a new tag
+  self.trimvaluelast=true;
+  while(true)
+  {
+   if(self.element._nstagname==name)
    {
     self.element=self.parents.pop();
-   }while(self.parents.length>1&&self.element.tagname!=name)
+    break;
+   }
+   if(self.parents.length==1)
+   {
+    console.log('error open tag not found for '+name);
+    break;
+   }
+   self.element=self.parents.pop();
   }
-  else
-   console.log("t error "+name)
-   */
- });
- 
+
+ }); 
+   
  self.parser.addListener('text', function(str)
  {
+  if(self.trimvaluefirst) // not works on nested tags
+  {
+   self.trimvaluefirst=false;
+   str=ltrim(str);
+  }
+  
+  if(self.trimvaluefirst)
+  {
+   if(self.element && ((typeof self.element._value)!=='undefined'))
+   {
+    self.element._value=trim(self.element._value);
+    if(self.element._value=="")
+     delete self.element._value;
+   }
+  }
+  
+  if(str!="")
   if (self.element)
   {
-   if(self.element.text)
-    self.element.value+=str;
+   if(typeof self.element._value!=='undefined')
+    self.element._value+=str;
    else
-    self.element.value=str;
+    self.element._value=str;
   }
  });
+ 
+ self.parse=function (data)
+ {
+
+  //var t=data.length, n=5120000;
+  //if(n>data.length)
+   self.parser.parse(data);
+  //else
+  // for (var i=0;i<t;i+=n)
+  // {
+  //  console.log('cunk'+i);
+  //  var s=data.substring(i,i+n);
+  //  self.parser.parse(s);
+  // }
+  
+
+  if(self.element && ((typeof self.element._value)!=='undefined'))
+  {
+   self.element._value=trim(self.element._value);
+   if(self.element._value=="")
+    delete self.element._value;
+  }
+  
+  var lasterror=self.parser.getError(); if(lasterror!==null) console.log("EXPAT Error:"+lasterror);
+  
+ }
 }; this.parser=parser;
+
+
+function ltrim(str) { 
+	for(var k = 0; k < str.length && isWhitespace(str.charAt(k)); k++);
+	return str.substring(k, str.length);
+}
+function rtrim(str) {
+	for(var j=str.length-1; j>=0 && isWhitespace(str.charAt(j)) ; j--) ;
+	return str.substring(0,j+1);
+}
+function trim(str) {
+	return ltrim(rtrim(str));
+}
+function isWhitespace(charToCheck) {
+	var whitespaceChars = " \t\n\r\f";
+	return (whitespaceChars.indexOf(charToCheck) != -1);
+}
