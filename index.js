@@ -19,7 +19,7 @@ this.sax=expat;
 // var expatsax=require('./deps/node-expat').sax;
 // var parser= new expatsax.Parser(charset) and add the expat events i added below:
 
- 
+var selfmodule=this;
 
 function parser(add_ref,ignore_ns,charset)
 {
@@ -63,7 +63,7 @@ function parser(add_ref,ignore_ns,charset)
    self.ns = {};
    for(var k in attrs)
    {
-    if(attrs.hasOwnProperty(key))
+    if(attrs.hasOwnProperty(k))
     {
      if (k == 'xmlns' || k.substr(0, 6) == 'xmlns:') self.ns[k] = attrs[k];
     }
@@ -74,7 +74,6 @@ function parser(add_ref,ignore_ns,charset)
   var el={};
   if(self.add_ref) el.parent=self.element;
    
-   
   var smicpos,nk;
   for(var k in attrs)
   {
@@ -82,7 +81,8 @@ function parser(add_ref,ignore_ns,charset)
    if(attrs.hasOwnProperty(k))
    {
     smicpos=k.indexOf(':'); if(smicpos>0) nk=k.substring(smicpos+1,k.length);
-    el[self.addns?k:nk] = attrs[k];
+    //el[self.addns?k:nk] = attrs[k];
+    el[self.addns?k:nk] = if_number_to_number(attrs[k]);
    }
   }
   
@@ -94,7 +94,7 @@ function parser(add_ref,ignore_ns,charset)
   if(typeof self.element[nk]==='undefined')
   {
   
-   if(self.add_ref) el[0]=el; el['length']=1; // array emulation
+   if(self.add_ref) {el[0]=el; el['length']=1;} // array emulation
    
    self.element[self.addns?name:nk]=el;
   }
@@ -105,7 +105,7 @@ function parser(add_ref,ignore_ns,charset)
   else
   {
    var tmp=self.element[nk];
-   if(self.add_ref) delete tmp[0]; delete tmp['length']; // array emulation
+   if(self.add_ref) {delete tmp[0]; delete tmp['length'];} // array emulation
    self.element[self.addns?name:nk]=[tmp,el];
   }
   self.parents.push(self.element);
@@ -171,7 +171,7 @@ function parser(add_ref,ignore_ns,charset)
  
  self.parse=function (data)
  {
-
+  if(data===undefined||data===null) { console.log("EXPAT Error: data is not string or buffer"); return;}
   //var t=data.length, n=5120000;
   //if(n>data.length)
    self.parser.parse(data);
@@ -194,8 +194,150 @@ function parser(add_ref,ignore_ns,charset)
   var lasterror=self.parser.getError(); if(lasterror!==null) console.log("EXPAT Error:"+lasterror);
   
  }
+ 
+ self.inspect=selfmodule.inspect;
+ self.array_to_object=selfmodule.array_to_object;
+
 }; this.parser=parser;
 
+function inspect(obj)
+{
+ if(typeof obj!=='object') console.log(require('sys').inspect(obj));
+ else for(var n in obj) console.log(n);
+};this.inspect=inspect;
+
+/*
+
+usage:
+    if(device.group===undefined)
+    {
+     // fallback devices do not contain group
+     //console.log(require('sys').inspect(device,true,3));
+    }
+    else
+    {
+     for(var n=0,l=device.group.length;n<l;n++)
+     {
+      //console.log(n);
+      device.group[n].capability=array_to_object(device.group[n].capability,'name');
+     }
+     device.group=array_to_object(device.group,'id');
+    }
+    
+input:
+
+{
+   "id" : "generic",
+   "user_agent" : "",
+   "fall_back" : "root",
+   "_tagname" : "device",
+   "_nstagname" : "device",
+   "group" : [
+     {
+       "id" : "product_info",
+       "_tagname" : "group",
+       "_nstagname" : "group",
+       "capability" : [
+         {
+           "name" : "mobile_browser",
+           "value" : "",
+           "_tagname" : "capability",
+           "_nstagname" : "capability" 
+         }
+    }
+  ]
+}
+
+result:
+
+{
+   "id" : "htc_magic_ver1_subandroid2_2_1",
+   "user_agent" : "Mozilla/5.0 (Linux; U; Android 2.2.1; es-es; HTC Magic Build/FRG57) AppleWebKit/533.1 (KHTML, like Gecko) Version/4.0 Mobile Safari/533",
+   "fall_back" : "htc_magic_ver1",
+   "_tagname" : "device",
+   "_nstagname" : "device",
+   "group" : {
+     "product_info" : {
+       "id" : "product_info",
+       "_tagname" : "group",
+       "_nstagname" : "group",
+       "capability" : {
+         "device_os_version": {
+           "name" : "device_os_version",
+           "value" : "2.2.1",
+           "_tagname" : "capability",
+           "_nstagname" : "capability" 
+        } 
+      } 
+    }
+  }
+}
+
+*/
+
+function array_to_object(arr,filed,ignoreerrors)
+{
+ var obj={};
+ ignoreerrors=!!ignoreerrors;
+ if((!(arr instanceof Array)) && (typeof arr==='object') )
+ {
+  if(arr[filed]===undefined)
+  {
+   if(!ignoreerrors)
+    throw new Error("object index name filed missing in array item : "); 
+  }
+  else
+  {
+   obj[arr[filed]]=arr;
+   //console.log(require('sys').inspect(obj,true,3));
+  }
+ }
+ else if(arr instanceof Array)
+ {
+  for(var i=0,l=arr.length; i<l ; i++)
+  {
+   if(arr[i][filed]===undefined)
+   {
+    if(!ignoreerrors)
+     throw new Error("index name filed missing in array item : "+i); 
+   }
+   else
+   {
+    obj[arr[i][filed]]=arr[i];
+   }
+  }
+ }
+ else
+ {
+  throw new Error(" arr is not an array or an object with a filed ");
+ }
+ return obj;
+}this.array_to_object=array_to_object;
+
+
+function search_array(arr,filed,value)
+{
+  for(var i=0,l=arr.length; i<l ; i++)
+  {
+   if(arr[i][filed]!==undefined)
+   {
+    if(arr[i][filed]==value)
+     return arr[i]
+   }
+  }
+  return false;
+};this.search_array=search_array;
+
+var numeric_re=/^[-+]?(0|[1-9]|[1-9]\d+)\.?\d{0,14}$/;
+function if_number_to_number(value)
+{
+ if(value.length>15) return value;
+ 
+ if(numeric_re.test(value))
+  return parseFloat(value);
+ else
+  return value;
+}
 
 function ltrim(str) { 
 	for(var k = 0; k < str.length && isWhitespace(str.charAt(k)); k++);

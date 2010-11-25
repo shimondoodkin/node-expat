@@ -27,4 +27,5 @@ function testfile(file)
 //testfile('test_data.html');
 
 //testfile('test_data.xml');
-testfile('test_data_longer.xml');
+//testfile('test_data_longer.xml');
+testfile('test_data_uaprofile.xml');
